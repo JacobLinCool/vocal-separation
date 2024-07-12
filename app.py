@@ -11,9 +11,9 @@ from audio_separator.separator import Separator
 
 
 separators = {
-    "BS-RoFormer": Separator(),
-    "Mel-RoFormer": Separator(),
-    "HTDemucs-FT": Separator(),
+    "BS-RoFormer": Separator(output_dir=tempfile.gettempdir(), output_format="mp3"),
+    "Mel-RoFormer": Separator(output_dir=tempfile.gettempdir(), output_format="mp3"),
+    "HTDemucs-FT": Separator(output_dir=tempfile.gettempdir(), output_format="mp3"),
 }
 
 separators["BS-RoFormer"].load_model("model_bs_roformer_ep_317_sdr_12.9755.ckpt")
@@ -24,6 +24,9 @@ separators["HTDemucs-FT"].load_model("htdemucs_ft.yaml")
 
 
 def use_yt_url(url: str) -> str:
+    if not url:
+        raise gr.Error("Please input a YouTube URL")
+
     hash = hashlib.md5(url.encode()).hexdigest()
     tmp_file = os.path.join(tempfile.gettempdir(), f"{hash}")
 
@@ -56,7 +59,7 @@ def merge(outs):
 def separate(audio: str, model: str) -> Tuple[str, str]:
     separator = separators[model]
     outs = separator.separate(audio)
-    print(outs)
+    outs = [os.path.join(tempfile.gettempdir(), out) for out in outs]
     # roformers
     if len(outs) == 2:
         return outs[1], outs[0]
@@ -96,7 +99,7 @@ with gr.Blocks() as app:
             yt = gr.Textbox(
                 label="YouTube URL", placeholder="https://www.youtube.com/watch?v=..."
             )
-            yt_btn = gr.Button("Use this youtube URL")
+            yt_btn = gr.Button("Use this YouTube URL")
 
     with gr.Row():
         model = gr.Radio(
@@ -111,6 +114,14 @@ with gr.Blocks() as app:
             vovals = gr.Audio(label="Vocals", format="mp3")
         with gr.Column():
             bgm = gr.Audio(label="Background", format="mp3")
+
+    gr.Examples(
+        examples=[
+            # I don't have any good examples, please contribute some!
+            # Suno's generated musix seems to have too many artifacts
+        ],
+        inputs=[audio],
+    )
 
     gr.Markdown(
         """
