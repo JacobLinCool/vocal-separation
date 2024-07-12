@@ -1,0 +1,5 @@
+gradio
+audio-separator[gpu]; sys_platform != 'darwin'
+audio-separator[cpu]; sys_platform == 'darwin'
+yt_dlp
+spaces
