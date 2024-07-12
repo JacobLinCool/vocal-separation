@@ -5,12 +5,22 @@ import spaces
 import yt_dlp
 import tempfile
 import hashlib
+import numpy as np
+import soundfile as sf
 from audio_separator.separator import Separator
 
-MODEL = "model_bs_roformer_ep_317_sdr_12.9755.ckpt"
 
-separator = Separator()
-separator.load_model(MODEL)
+separators = {
+    "BS-RoFormer": Separator(),
+    "Mel-RoFormer": Separator(),
+    "HTDemucs-FT": Separator(),
+}
+
+separators["BS-RoFormer"].load_model("model_bs_roformer_ep_317_sdr_12.9755.ckpt")
+separators["Mel-RoFormer"].load_model(
+    "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt"
+)
+separators["HTDemucs-FT"].load_model("htdemucs_ft.yaml")
 
 
 def use_yt_url(url: str) -> str:
@@ -35,10 +45,26 @@ def use_yt_url(url: str) -> str:
     return tmp_file + ".mp3"
 
 
+def merge(outs):
+    bgm = np.sum(np.array([sf.read(out)[0] for out in outs]), axis=0)
+    tmp_file = os.path.join(tempfile.gettempdir(), f"{outs[0].split('/')[-1]}_merged")
+    sf.write(tmp_file + ".mp3", bgm, 44100)
+    return tmp_file + ".mp3"
+
+
 @spaces.GPU(duration=120)
-def separate(audio: str) -> Tuple[str, str]:
+def separate(audio: str, model: str) -> Tuple[str, str]:
+    separator = separators[model]
     outs = separator.separate(audio)
-    return outs[1], outs[0]
+    print(outs)
+    # roformers
+    if len(outs) == 2:
+        return outs[1], outs[0]
+    # demucs
+    if len(outs) == 4:
+        bgm = merge(outs[:3])
+        return outs[3], bgm
+    raise gr.Error("Unknown output format")
 
 
 with gr.Blocks() as app:
@@ -47,11 +73,15 @@ with gr.Blocks() as app:
         f"""
         # BS-RoFormer Vocal Separation
 
-        This is a demo of the BS-RoFormer vocal separation model, which is the SOTA model for vocal separation. ([SDX23](https://arxiv.org/abs/2309.02612))
-        
+        This is a demo of the BS-RoFormer vocal separation model, which is the SOTA model for vocal separation. ([MDX23](https://www.aicrowd.com/challenges/sound-demixing-challenge-2023/problems/music-demixing-track-mdx-23/leaderboards))
+
         Upload an audio file and the model will separate the vocals from the background music.
 
-        > The model (`{MODEL}`) is trained by the [UVR project](https://github.com/Anjok07/ultimatevocalremovergui).
+        For comparison, you can also try the Mel-RoFormer model (a variant of BS-RoFormer) and the popular HTDemucs FT model.
+
+        > The models are trained by the [UVR project](https://github.com/Anjok07/ultimatevocalremovergui).
+
+        > The code of this app is available on [GitHub](https://github.com/JacobLinCool/BS-RoFormer-app), any contributions should go there. Hugging Face Space is force pushed by GitHub Actions.
         """
     )
 
@@ -68,7 +98,13 @@ with gr.Blocks() as app:
             )
             yt_btn = gr.Button("Use this youtube URL")
 
-    btn = gr.Button("Separate", variant="primary")
+    with gr.Row():
+        model = gr.Radio(
+            label="Select a model",
+            choices=[s for s in separators.keys()],
+            value="BS-RoFormer",
+        )
+        btn = gr.Button("Separate", variant="primary")
 
     with gr.Row():
         with gr.Column():
@@ -76,9 +112,16 @@ with gr.Blocks() as app:
         with gr.Column():
             bgm = gr.Audio(label="Background", format="mp3")
 
+    gr.Markdown(
+        """
+        - BS-RoFormer: https://arxiv.org/abs/2309.02612
+        - Mel-RoFormer: https://arxiv.org/abs/2310.01809
+        """
+    )
+
     btn.click(
         fn=separate,
-        inputs=[audio],
+        inputs=[audio, model],
         outputs=[vovals, bgm],
     )
 
