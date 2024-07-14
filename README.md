@@ -1,6 +1,6 @@
 # Vocal Separation SOTA
 
-[HuggingFace Spaces](https://huggingface.co/spaces/JacobLinCool/vocal-separation)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-lg-dark.svg)](https://huggingface.co/spaces/JacobLinCool/vocal-separation)
 
 This is a demo for SOTA vocal separation models. Upload an audio file and the model will separate the vocals from the background music.
 
