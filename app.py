@@ -1,17 +1,14 @@
 import os
 from typing import Tuple
 import gradio as gr
-import spaces
-import spaces.config
-import yt_dlp
 import tempfile
-import hashlib
 import numpy as np
 import soundfile as sf
 import librosa
 import matplotlib.pyplot as plt
 from audio_separator.separator import Separator
 from zero import dynGPU
+from youtube import youtube
 
 
 separators = {
@@ -36,31 +33,6 @@ for _ in range(3):
         break
     except Exception as e:
         print(e)
-
-
-def youtube(url: str) -> str:
-    if not url:
-        raise gr.Error("Please input a YouTube URL")
-
-    hash = hashlib.md5(url.encode()).hexdigest()
-    tmp_file = os.path.join(tempfile.gettempdir(), f"{hash}")
-
-    ydl_opts = {
-        "format": "bestaudio/best",
-        "outtmpl": tmp_file,
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }
-        ],
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-
-    return tmp_file + ".mp3"
 
 
 def merge(outs):
