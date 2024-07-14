@@ -20,11 +20,22 @@ separators = {
     "HTDemucs-FT": Separator(output_dir=tempfile.gettempdir(), output_format="mp3"),
 }
 
-separators["BS-RoFormer"].load_model("model_bs_roformer_ep_317_sdr_12.9755.ckpt")
-separators["Mel-RoFormer"].load_model(
-    "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt"
-)
-separators["HTDemucs-FT"].load_model("htdemucs_ft.yaml")
+
+def load():
+    separators["BS-RoFormer"].load_model("model_bs_roformer_ep_317_sdr_12.9755.ckpt")
+    separators["Mel-RoFormer"].load_model(
+        "model_mel_band_roformer_ep_3005_sdr_11.4360.ckpt"
+    )
+    separators["HTDemucs-FT"].load_model("htdemucs_ft.yaml")
+
+
+# sometimes the network might be down, so we retry a few times
+for _ in range(3):
+    try:
+        load()
+        break
+    except Exception as e:
+        print(e)
 
 
 def youtube(url: str) -> str:
