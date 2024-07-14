@@ -73,6 +73,10 @@ def separate(audio: str, model: str) -> Tuple[str, str]:
 with gr.Blocks() as app:
     with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as f:
         README = f.read()
+        # remove yaml front matter
+        blocks = README.split("---")
+        if len(blocks) > 1:
+            README = "---".join(blocks[2:])
 
     gr.Markdown(README)
 
