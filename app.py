@@ -7,6 +7,8 @@ import tempfile
 import hashlib
 import numpy as np
 import soundfile as sf
+import librosa
+import matplotlib.pyplot as plt
 from audio_separator.separator import Separator
 
 
@@ -23,7 +25,7 @@ separators["Mel-RoFormer"].load_model(
 separators["HTDemucs-FT"].load_model("htdemucs_ft.yaml")
 
 
-def use_yt_url(url: str) -> str:
+def youtube(url: str) -> str:
     if not url:
         raise gr.Error("Please input a YouTube URL")
 
@@ -70,6 +72,18 @@ def separate(audio: str, model: str) -> Tuple[str, str]:
     raise gr.Error("Unknown output format")
 
 
+def plot_spectrogram(audio: str):
+    y, sr = librosa.load(audio, sr=44100)
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
+    S_dB = librosa.power_to_db(S, ref=np.max)
+    fig = plt.figure(figsize=(15, 5))
+    librosa.display.specshow(S_dB, sr=sr, x_axis="time", y_axis="mel")
+    plt.colorbar(format="%+2.0f dB")
+    plt.title("Mel-frequency spectrogram")
+    fig.tight_layout()
+    return fig
+
+
 with gr.Blocks() as app:
     with open(os.path.join(os.path.dirname(__file__), "README.md"), "r") as f:
         README = f.read()
@@ -103,9 +117,19 @@ with gr.Blocks() as app:
 
     with gr.Row():
         with gr.Column():
-            vovals = gr.Audio(label="Vocals", format="mp3")
+            vocals = gr.Audio(
+                label="Vocals", format="mp3", type="filepath", interactive=False
+            )
         with gr.Column():
-            bgm = gr.Audio(label="Background", format="mp3")
+            bgm = gr.Audio(
+                label="Background", format="mp3", type="filepath", interactive=False
+            )
+
+    with gr.Row():
+        with gr.Column():
+            vocal_spec = gr.Plot(label="Vocal spectrogram")
+        with gr.Column():
+            bgm_spec = gr.Plot(label="Background spectrogram")
 
     gr.Examples(
         examples=[
@@ -125,11 +149,19 @@ with gr.Blocks() as app:
     btn.click(
         fn=separate,
         inputs=[audio, model],
-        outputs=[vovals, bgm],
+        outputs=[vocals, bgm],
+    ).success(
+        fn=plot_spectrogram,
+        inputs=[vocals],
+        outputs=[vocal_spec],
+    ).success(
+        fn=plot_spectrogram,
+        inputs=[bgm],
+        outputs=[bgm_spec],
     )
 
     yt_btn.click(
-        fn=use_yt_url,
+        fn=youtube,
         inputs=[yt],
         outputs=[audio],
     )

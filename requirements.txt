@@ -2,6 +2,7 @@ gradio
 # audio-separator[gpu]; sys_platform != 'darwin'
 audio-separator[cpu]; sys_platform == 'darwin'
 yt_dlp
+librosa
 spaces
 
 git+https://github.com/JacobLinCool/python-audio-separator.git@7007e5759454d5e06a287083e33d09866bb2f428; sys_platform != 'darwin'
