@@ -2,6 +2,7 @@ import os
 from typing import Tuple
 import gradio as gr
 import spaces
+import spaces.config
 import yt_dlp
 import tempfile
 import hashlib
@@ -10,6 +11,7 @@ import soundfile as sf
 import librosa
 import matplotlib.pyplot as plt
 from audio_separator.separator import Separator
+from zero import dynGPU
 
 
 separators = {
@@ -57,7 +59,12 @@ def merge(outs):
     return tmp_file + ".mp3"
 
 
-@spaces.GPU(duration=120)
+def measure_duration(audio: str, model: str) -> int:
+    y, sr = librosa.load(audio, sr=44100)
+    return int(librosa.get_duration(y=y, sr=sr) / 3.0)
+
+
+@dynGPU(duration=measure_duration)
 def separate(audio: str, model: str) -> Tuple[str, str]:
     separator = separators[model]
     outs = separator.separate(audio)
