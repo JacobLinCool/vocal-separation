@@ -21,6 +21,6 @@ jobs:
               with:
                   github: ${{ secrets.GITHUB_TOKEN }}
                   user: jacoblincool # Hugging Face username or organization name
-                  space: bs-roformer # Hugging Face space name
+                  space: vocal-separation # Hugging Face space name
                   token: ${{ secrets.HF_TOKEN }} # Hugging Face token
                   configuration: headers.yaml
