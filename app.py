@@ -157,6 +157,7 @@ with gr.Blocks() as app:
         fn=separate,
         inputs=[audio, model],
         outputs=[vocals, bgm],
+        api_name="separate",
     ).success(
         fn=plot_spectrogram,
         inputs=[vocals],
