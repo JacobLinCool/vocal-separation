@@ -166,4 +166,4 @@ with gr.Blocks() as app:
         outputs=[audio],
     )
 
-    app.launch()
+    app.launch(show_error=True)
