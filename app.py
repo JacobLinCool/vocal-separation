@@ -7,6 +7,7 @@ import soundfile as sf
 import librosa
 import matplotlib.pyplot as plt
 from audio_separator.separator import Separator
+import spaces
 from zero import dynGPU
 from youtube import youtube
 
@@ -47,7 +48,8 @@ def measure_duration(audio: str, model: str) -> int:
     return int(librosa.get_duration(y=y, sr=sr) / 3.0)
 
 
-@dynGPU(duration=measure_duration)
+# @dynGPU(duration=measure_duration) # dynGPU caused HTDemucs not to release the GPU after use
+@spaces.GPU(duration=120)
 def separate(audio: str, model: str) -> Tuple[str, str]:
     separator = separators[model]
     outs = separator.separate(audio)
