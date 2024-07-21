@@ -37,7 +37,9 @@ for _ in range(3):
 
 
 def merge(outs):
+    print(f"Merging {outs}")
     bgm = np.sum(np.array([sf.read(out)[0] for out in outs]), axis=0)
+    print(f"Merged shape: {bgm.shape}")
     tmp_file = os.path.join(tempfile.gettempdir(), f"{outs[0].split('/')[-1]}_merged")
     sf.write(tmp_file + ".mp3", bgm, 44100)
     return tmp_file + ".mp3"
@@ -48,8 +50,7 @@ def measure_duration(audio: str, model: str) -> int:
     return int(librosa.get_duration(y=y, sr=sr) / 3.0)
 
 
-# @dynGPU(duration=measure_duration) # dynGPU caused HTDemucs not to release the GPU after use
-@spaces.GPU(duration=120)
+@dynGPU(duration=measure_duration)
 def separate(audio: str, model: str) -> Tuple[str, str]:
     separator = separators[model]
     outs = separator.separate(audio)
