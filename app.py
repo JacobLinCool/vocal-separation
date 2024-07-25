@@ -7,7 +7,6 @@ import soundfile as sf
 import librosa
 import matplotlib.pyplot as plt
 from audio_separator.separator import Separator
-import spaces
 from zero import dynGPU
 from youtube import youtube
 
@@ -63,6 +62,11 @@ def separate(audio: str, model: str) -> Tuple[str, str]:
         bgm = merge(outs[:3])
         return outs[3], bgm
     raise gr.Error("Unknown output format")
+
+
+def from_youtube(url: str, model: str) -> Tuple[str, str, str]:
+    audio = youtube(url)
+    return audio, *separate(audio, model)
 
 
 def plot_spectrogram(audio: str):
@@ -155,9 +159,17 @@ with gr.Blocks() as app:
     )
 
     yt_btn.click(
-        fn=youtube,
-        inputs=[yt],
-        outputs=[audio],
+        fn=from_youtube,
+        inputs=[yt, model],
+        outputs=[audio, vocals, bgm],
+    ).success(
+        fn=plot_spectrogram,
+        inputs=[vocals],
+        outputs=[vocal_spec],
+    ).success(
+        fn=plot_spectrogram,
+        inputs=[bgm],
+        outputs=[bgm_spec],
     )
 
     app.launch(show_error=True)
